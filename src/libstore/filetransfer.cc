@@ -8,6 +8,7 @@
 #include "nix/util/logging.hh"
 #include "nix/util/util.hh"
 #include "nix/util/socket.hh"
+#include "nix/util/rng.hh"
 
 #include "nix/store/s3-url.hh"
 #include <optional>
@@ -63,7 +64,7 @@ constexpr bool operator==(long lhs, HttpStatus rhs) noexcept
 
 } // namespace
 
-std::chrono::milliseconds computeRetryDelayMs(const RetryDelayParams & p, std::mt19937 & rng)
+std::chrono::milliseconds computeRetryDelayMs(const RetryDelayParams & p, RandomNumberGenerator<uint32_t, std::mt19937> & rng)
 {
     uint32_t backoff = clampedExponential(p.baseMs, p.attempt, p.ceilMs);
 
@@ -83,7 +84,7 @@ std::chrono::milliseconds computeRetryDelayMs(const RetryDelayParams & p, std::m
     if (ceiling <= floor)
         return std::chrono::milliseconds(floor);
 
-    return std::chrono::milliseconds(std::uniform_int_distribution<uint32_t>(floor, ceiling)(rng));
+    return std::chrono::milliseconds(rng(floor, ceiling));
 }
 
 std::optional<std::filesystem::path> FileTransferSettings::getDefaultSSLCertFile()
@@ -171,8 +172,7 @@ struct curlFileTransfer : public FileTransfer
 
     curlMulti curlm;
 
-    std::random_device rd;
-    std::mt19937 mt19937;
+    RandomNumberGenerator<uint32_t, std::mt19937> mt19937{};
 
     struct TransferItem : public std::enable_shared_from_this<TransferItem>, public FileTransfer::Item
     {
@@ -1031,7 +1031,6 @@ struct curlFileTransfer : public FileTransfer
 
     curlFileTransfer(const FileTransferSettings & settings)
         : settings(settings)
-        , mt19937(rd())
         , maxQueueSize([&]() -> std::size_t {
             if (settings.httpConnections.get())
                 return settings.httpConnections.get() * 5;

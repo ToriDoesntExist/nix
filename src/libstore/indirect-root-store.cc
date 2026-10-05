@@ -10,7 +10,7 @@ void IndirectRootStore::makeSymlink(const std::filesystem::path & link, const st
     createDirs(link.parent_path());
 
     /* Create the new symlink. */
-    auto tempLink = std::filesystem::path(link) += fmt(".tmp-%1%-%2%", getpid(), rand());
+    auto tempLink = std::filesystem::path(link) += fmt(".tmp-%1%-%2%", getpid(), rng());
     createSymlink(target, tempLink);
 
     /* Atomically replace the old one. */

@@ -3,6 +3,7 @@
 #include "nix/util/util.hh"
 #include "nix/util/url.hh"
 #include "nix/util/signals.hh"
+#include "nix/util/rng.hh"
 
 #ifdef __linux__
 #  include <sys/vfs.h>
@@ -292,7 +293,9 @@ void handleSQLiteBusy(const SQLiteBusy & e, time_t & nextWarning)
        is likely to fail again. */
     checkInterrupt();
     /* <= 0.1s */
-    std::this_thread::sleep_for(std::chrono::milliseconds{rand() % 100});
+    std::this_thread::sleep_for(std::chrono::milliseconds {
+        RandomNumberGenerator<uint32_t, std::mt19937>{}(0, 100)
+    });
 }
 
 } // namespace nix

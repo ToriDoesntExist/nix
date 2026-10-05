@@ -11,7 +11,7 @@
 #include <cstdint>
 #include <limits>
 #include <optional>
-#include <random>
+#include <nix/util/rng.hh>
 
 namespace nix {
 
@@ -68,6 +68,6 @@ struct RetryDelayParams
  *
  * @param rng  random number generator (unused if p.jitter is false)
  */
-std::chrono::milliseconds computeRetryDelayMs(const RetryDelayParams & p, std::mt19937 & rng);
+std::chrono::milliseconds computeRetryDelayMs(const RetryDelayParams & p, RandomNumberGenerator<uint32_t, std::mt19937> & rng);
 
 } // namespace nix

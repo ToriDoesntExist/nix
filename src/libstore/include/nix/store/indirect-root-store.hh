@@ -2,6 +2,7 @@
 ///@file
 
 #include "nix/store/local-fs-store.hh"
+#include "nix/util/rng.hh"
 
 namespace nix {
 
@@ -71,6 +72,8 @@ public:
      * The form this weak-reference takes is implementation-specific.
      */
     virtual void addIndirectRoot(const std::filesystem::path & path) = 0;
+
+    RandomNumberGenerator<uint32_t, std::mt19937> rng{};
 
 protected:
     void makeSymlink(const std::filesystem::path & link, const std::filesystem::path & target);

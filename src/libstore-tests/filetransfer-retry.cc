@@ -26,7 +26,7 @@ class RetryDelayDeterministicTest : public ::testing::TestWithParam<RetryDelayCa
 TEST_P(RetryDelayDeterministicTest, yieldsExpectedDelay)
 {
     auto & p = GetParam();
-    std::mt19937 rng{0};
+    RandomNumberGenerator<uint32_t, std::mt19937> rng{};
     auto result = computeRetryDelayMs(
         {.attempt = p.attempt, .baseMs = p.baseMs, .ceilMs = p.ceilMs, .retryAfterMs = p.retryAfterMs, .jitter = false},
         rng);
@@ -100,7 +100,7 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST(computeRetryDelayMs, jitter_stays_in_bounds)
 {
-    std::mt19937 rng{42};
+    RandomNumberGenerator<uint32_t, std::mt19937> rng{};
     for (int i = 0; i < 1000; i++) {
         auto ms = computeRetryDelayMs({.attempt = 3, .baseMs = 100, .ceilMs = 60000, .jitter = true}, rng).count();
         EXPECT_LE(ms, 400); // 100 * 2^2 = 400
@@ -110,7 +110,7 @@ TEST(computeRetryDelayMs, jitter_stays_in_bounds)
 TEST(computeRetryDelayMs, jitter_with_retry_after_floor)
 {
     // computed = 100, Retry-After = 5000 → jitter in [5000, 5100]
-    std::mt19937 rng{42};
+    RandomNumberGenerator<uint32_t, std::mt19937> rng{};
     for (int i = 0; i < 1000; i++) {
         auto ms = computeRetryDelayMs(
                       {.attempt = 1, .baseMs = 100, .ceilMs = 60000, .retryAfterMs = 5000, .jitter = true}, rng)
@@ -122,14 +122,14 @@ TEST(computeRetryDelayMs, jitter_with_retry_after_floor)
 
 TEST(computeRetryDelayMs, zero_base_jitter_returns_zero)
 {
-    std::mt19937 rng{0};
+    RandomNumberGenerator<uint32_t, std::mt19937> rng{};
     // ceiled == 0 → early return, no distribution created
     EXPECT_EQ(computeRetryDelayMs({.attempt = 1, .baseMs = 0, .ceilMs = 60000, .jitter = true}, rng).count(), 0);
 }
 
 TEST(computeRetryDelayMs, jitter_with_ceil_zero)
 {
-    std::mt19937 rng{42};
+    RandomNumberGenerator<uint32_t, std::mt19937> rng{};
     // ceilMs=0 → backoff=0 → ceiling<=floor early return, rng untouched
     EXPECT_EQ(computeRetryDelayMs({.attempt = 1, .baseMs = 100, .ceilMs = 0, .jitter = true}, rng).count(), 0);
 }
@@ -137,7 +137,7 @@ TEST(computeRetryDelayMs, jitter_with_ceil_zero)
 TEST(computeRetryDelayMs, jitter_ceiled_one)
 {
     // Smallest non-trivial jitter range: [0, 1]
-    std::mt19937 rng{42};
+    RandomNumberGenerator<uint32_t, std::mt19937> rng{};
     bool sawZero = false, sawOne = false;
     for (int i = 0; i < 100; i++) {
         auto ms = computeRetryDelayMs({.attempt = 1, .baseMs = 1, .ceilMs = 1, .jitter = true}, rng).count();
